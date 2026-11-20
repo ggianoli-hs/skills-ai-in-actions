@@ -25,7 +25,6 @@ jobs:
         uses: actions/ai-inference@v2
         with:
           provider: copilot
-          model: gpt-4.1
           max-tokens: 1000
           system-prompt: |
             You are a GitHub issue assistant. Your task is to analyze newly opened issues for completeness.
