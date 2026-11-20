@@ -1,29 +1,27 @@
 ## Step 1: Introduction to AI Actions
 
-In this exercise, you'll learn to integrate AI capabilities directly into your GitHub Actions workflows using GitHub Models. Let's start with understanding the key concepts and then straight to creating your first AI-powered workflow!
+In this exercise, you'll learn to integrate AI capabilities directly into your GitHub Actions workflows using GitHub Copilot CLI. Let's start with understanding the key concepts and then straight to creating your first AI-powered workflow!
 
-### 📖 Theory: GitHub Models in Actions
+### 📖 Theory: GitHub Copilot in Actions
 
-#### 🤖 What is GitHub Models?
+#### 🤖 What is GitHub Copilot CLI?
 
-**[GitHub Models](https://docs.github.com/github-models)** is a service that provides a curated catalog of AI models from leading providers. Among its many use cases, GitHub Models includes an inference API available at `https://models.github.ai/inference` that allows developers to integrate AI capabilities directly into their GitHub workflows and applications.
+**[GitHub Copilot CLI](https://docs.github.com/copilot/github-copilot-in-the-cli)** lets you use Copilot models directly in your GitHub Actions workflows.
 
-#### ⚙️ How GitHub Actions work with GitHub Models
+#### ⚙️ How GitHub Actions work with Copilot CLI
 
-The [integration](https://docs.github.com/en/github-models/use-github-models/integrating-ai-models-into-your-development-workflow#using-ai-models-with-github-actions) between GitHub Actions and GitHub Models is designed to be seamless:
+The [actions/ai-inference](https://github.com/actions/ai-inference) action can invoke Copilot CLI to run AI inference from a workflow:
 
-- 🔑 **Built-in Authentication**: The GitHub Actions built-in [`GITHUB_TOKEN`](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token#modifying-the-permissions-for-the-github_token) can be used to authorize calls to the GitHub Models service, eliminating the need for additional API keys or complex authentication setup with third party providers.
+- 🔑 **Copilot Authentication**: Copilot CLI requires a fine-grained token with the **Copilot Requests** permission. Store it as the repository Actions secret `COPILOT_PAT`.
 
-- 🔐 **Simple Permissions**: The [`models: read`](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token#modifying-the-permissions-for-the-github_token) permission grants the `GITHUB_TOKEN` access to the GitHub Models inference API for making AI requests.
-
-- 🎯 **Easy Integration**: The official [actions/ai-inference](https://github.com/actions/ai-inference) action provides a very simple path to using GitHub Models in GitHub Actions.
+- ⚙️ **CLI Setup**: Set up Node.js, install `@github/copilot` before invoking the inference action, and set `provider: copilot`.
 
 > [!TIP]
 >
 > Want to dive deeper? Check out these resources:
 >
-> - 📖 [GitHub Models Documentation](https://docs.github.com/en/github-models)
-> - ⚡ [Rate Limits](https://docs.github.com/en/github-models/use-github-models/prototyping-with-ai-models#rate-limits) and [Moving Beyond Free Limits](https://github.blog/changelog/2025-06-24-github-models-now-supports-moving-beyond-free-limits/) for GitHub Models
+> - 📖 [GitHub Copilot CLI documentation](https://docs.github.com/copilot/github-copilot-in-the-cli)
+> - 🎯 [AI inference action](https://github.com/actions/ai-inference)
 
 ### ⌨️ Activity: Create Your First AI Workflow
 
@@ -39,15 +37,14 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
    ask-ai.yml
    ```
 
-1. Start by adding the workflow name, manual event trigger and required permissions:
+1. Before creating the workflow, add a repository Actions secret named `COPILOT_PAT` containing a fine-grained token with the **Copilot Requests** permission.
+
+   Start by adding the workflow name and manual event trigger:
 
    ```yaml
    name: Ask AI
    on:
      workflow_dispatch:
-
-   permissions:
-     models: read
    ```
 
    > ❗ **Caution:** Copy the contents as provided, as this exact workflow name (`Ask AI`) is required to progress to next steps of this exercise.
@@ -62,13 +59,23 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
        runs-on: ubuntu-latest
 
        steps:
+         - uses: actions/setup-node@v7.1.0
+           with:
+             node-version: 24
+
+         - name: Install Copilot CLI
+           run: npm install -g @github/copilot
+
          - name: AI Inference
            id: ai-response
            uses: actions/ai-inference@v2
            with:
-             token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+             provider: copilot
+             model: gpt-4.1
              prompt: |
                Give me a programming joke.
+           env:
+             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
 
          - name: Display AI Response
            run: |
@@ -104,7 +111,7 @@ Now let's test the workflow you just created to see AI in action!
   - Find the issue in the workflow and commit the changes again to `main` branch
   - Try running the workflow again
 - **No AI response**: Make sure the `id: ai-response` is set on the AI Inference step and referenced correctly in the Display step
-- **Permission errors**: Double-check that the `models: read` permission is properly configured in your workflow file
+- **Authentication errors**: Make sure the repository Actions secret `COPILOT_PAT` contains a fine-grained token with the **Copilot Requests** permission
 - **Action not found**: Verify you're using the exact action name: `actions/ai-inference@v2`
 
 </details>
