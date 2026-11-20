@@ -1,35 +1,25 @@
 name: Ask AI
-
 on:
   workflow_dispatch:
 
 permissions:
-  copilot-requests: write
+  models: read
 
 jobs:
   ask-ai:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-node@v7.1.0
-        with:
-          node-version: 24
-
-      - name: Install Copilot CLI
-        run: npm install -g @github/copilot
-
       - name: AI Inference
         id: ai-response
-        uses: actions/ai-inference@v3
+        uses: actions/ai-inference@v2
         with:
-          model: gpt-4.1
+          token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Give me a programming joke.
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Display AI Response
-        env:
-          AI_RESPONSE: ${{ steps.ai-response.outputs.response }}
         run: |
-          printf '## 🤖 AI Response\n\n%s\n' "$AI_RESPONSE" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🤖 AI Response" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.ai-response.outputs.response }}" >> $GITHUB_STEP_SUMMARY
