@@ -12,7 +12,7 @@ In this exercise, you'll learn to integrate AI capabilities directly into your G
 
 The [actions/ai-inference](https://github.com/actions/ai-inference) action can invoke Copilot CLI to run AI inference from a workflow:
 
-- 🔑 **Copilot Authentication**: Copilot CLI requires a fine-grained token with the **Copilot Requests** permission. Store it as the repository Actions secret `COPILOT_PAT`.
+- 🔑 **Copilot Authentication**: Grant the workflow `copilot-requests: write` permission to authenticate Copilot CLI with the built-in `GITHUB_TOKEN`.
 
 - ⚙️ **CLI Setup**: Set up Node.js and install `@github/copilot` before invoking the Copilot-only inference action.
 
@@ -37,17 +37,18 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
    ask-ai.yml
    ```
 
-1. Before creating the workflow, add a repository Actions secret named `COPILOT_PAT` containing a fine-grained token with the **Copilot Requests** permission.
-
-   Start by adding the workflow name and manual event trigger:
+1. Start by adding the workflow name, manual event trigger, and permission for Copilot requests:
 
    ```yaml
    name: Ask AI
    on:
      workflow_dispatch:
 
-   permissions: {}
+   permissions:
+     copilot-requests: write
    ```
+
+   This permission allows the workflow's built-in `GITHUB_TOKEN` to authenticate Copilot CLI requests, so no personal access token secret is needed.
 
    > ❗ **Caution:** Copy the contents as provided, as this exact workflow name (`Ask AI`) is required to progress to next steps of this exercise.
 
@@ -61,15 +62,6 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
        runs-on: ubuntu-latest
 
        steps:
-         - name: Check Copilot credentials
-           env:
-             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
-           run: |
-             if [[ -z "$COPILOT_GITHUB_TOKEN" ]]; then
-               echo "::error::Set the COPILOT_PAT Actions secret to a fine-grained token with the Copilot Requests permission."
-               exit 1
-             fi
-
          - uses: actions/setup-node@v7.1.0
            with:
              node-version: 24
@@ -85,7 +77,7 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
              prompt: |
                Give me a programming joke.
            env:
-             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
+             GITHUB_TOKEN: {% raw %}${{ github.token }}{% endraw %}
 
          - name: Display AI Response
            env:
@@ -121,7 +113,7 @@ Now let's test the workflow you just created to see AI in action!
   - Find the issue in the workflow and commit the changes again to `main` branch
   - Try running the workflow again
 - **No AI response**: Make sure the `id: ai-response` is set on the AI Inference step and referenced correctly in the Display step
-- **Authentication errors**: Make sure the repository Actions secret `COPILOT_PAT` contains a fine-grained token with the **Copilot Requests** permission
+- **Authentication errors**: Make sure the workflow grants `copilot-requests: write` permission
 - **Action not found**: Verify you're using the exact action name: `actions/ai-inference@v3`
 
 </details>
