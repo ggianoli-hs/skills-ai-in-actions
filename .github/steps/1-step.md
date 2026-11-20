@@ -14,7 +14,7 @@ The [actions/ai-inference](https://github.com/actions/ai-inference) action can i
 
 - 🔑 **Copilot Authentication**: Copilot CLI requires a fine-grained token with the **Copilot Requests** permission. Store it as the repository Actions secret `COPILOT_PAT`.
 
-- ⚙️ **CLI Setup**: Set up Node.js, install `@github/copilot` before invoking the inference action, and set `provider: copilot`.
+- ⚙️ **CLI Setup**: Set up Node.js and install `@github/copilot` before invoking the Copilot-only inference action.
 
 > [!TIP]
 >
@@ -45,6 +45,8 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
    name: Ask AI
    on:
      workflow_dispatch:
+
+   permissions: {}
    ```
 
    > ❗ **Caution:** Copy the contents as provided, as this exact workflow name (`Ask AI`) is required to progress to next steps of this exercise.
@@ -59,6 +61,15 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
        runs-on: ubuntu-latest
 
        steps:
+         - name: Check Copilot credentials
+           env:
+             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
+           run: |
+             if [[ -z "$COPILOT_GITHUB_TOKEN" ]]; then
+               echo "::error::Set the COPILOT_PAT Actions secret to a fine-grained token with the Copilot Requests permission."
+               exit 1
+             fi
+
          - uses: actions/setup-node@v7.1.0
            with:
              node-version: 24
@@ -68,9 +79,8 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
 
          - name: AI Inference
            id: ai-response
-           uses: actions/ai-inference@v2
+           uses: actions/ai-inference@v3
            with:
-             provider: copilot
              model: gpt-4.1
              prompt: |
                Give me a programming joke.
@@ -78,10 +88,10 @@ Let's create a simple workflow that we can trigger manually from the GitHub UI.
              COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
 
          - name: Display AI Response
+           env:
+             AI_RESPONSE: {% raw %}${{ steps.ai-response.outputs.response }}{% endraw %}
            run: |
-             echo "## 🤖 AI Response" >> $GITHUB_STEP_SUMMARY
-             echo "" >> $GITHUB_STEP_SUMMARY
-             echo "{% raw %}${{ steps.ai-response.outputs.response }}{% endraw %}" >> $GITHUB_STEP_SUMMARY
+             printf '## 🤖 AI Response\n\n%s\n' "$AI_RESPONSE" >> "$GITHUB_STEP_SUMMARY"
    ```
 
    > ❗ **Caution:** Be mindful of YAML formatting! GitHub's file editor will show red underlines for certain YAML errors.
@@ -112,6 +122,6 @@ Now let's test the workflow you just created to see AI in action!
   - Try running the workflow again
 - **No AI response**: Make sure the `id: ai-response` is set on the AI Inference step and referenced correctly in the Display step
 - **Authentication errors**: Make sure the repository Actions secret `COPILOT_PAT` contains a fine-grained token with the **Copilot Requests** permission
-- **Action not found**: Verify you're using the exact action name: `actions/ai-inference@v2`
+- **Action not found**: Verify you're using the exact action name: `actions/ai-inference@v3`
 
 </details>
