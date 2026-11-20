@@ -36,7 +36,7 @@ We'll follow the three-step pattern: gathering context from issue events, proces
    issue-completeness.yml
    ```
 
-1. Add the workflow metadata and permissions
+1. Make sure the repository Actions secret `COPILOT_PAT` contains a fine-grained token with the **Copilot Requests** permission. Then add the workflow metadata and permissions:
 
    ```yaml
    name: Issue Completeness
@@ -46,11 +46,10 @@ We'll follow the three-step pattern: gathering context from issue events, proces
        types: [opened]
 
    permissions:
-     models: read
      issues: write
    ```
 
-   This workflow will run whenever a new issue is opened with the permissions to access GitHub Models and to write new issue comments.
+   This workflow will run whenever a new issue is opened and can write new issue comments.
 
    > ❗ **Caution:** Copy the contents as provided, as this exact workflow name (`Issue Completeness`) is required to progress to next steps of this exercise.
 
@@ -66,11 +65,19 @@ We'll follow the three-step pattern: gathering context from issue events, proces
        name: AI Issue Completeness
        runs-on: ubuntu-latest
        steps:
+         - uses: actions/setup-node@v7.1.0
+           with:
+             node-version: 24
+
+         - name: Install Copilot CLI
+           run: npm install -g @github/copilot
+
          - name: Analyze issue with AI
            id: ai-response
            uses: actions/ai-inference@v2
            with:
-             token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+             provider: copilot
+             model: gpt-4.1
              max-tokens: 1000
              system-prompt: |
                You are a GitHub issue assistant. Your task is to analyze newly opened issues for completeness.
@@ -87,6 +94,8 @@ We'll follow the three-step pattern: gathering context from issue events, proces
                ---
                {% raw %}${{ github.event.issue.body }}{% endraw %}
                ---
+           env:
+             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.COPILOT_PAT }}{% endraw %}
    ```
 
    > 🪧 **Note:** The **`max-tokens`** parameter is used to control the maximum length of the response. Low values could mean the response is cut off halway.
